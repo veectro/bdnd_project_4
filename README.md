@@ -29,7 +29,10 @@ To view dapp:
 
 ## Develop Server
 
+`export NODE_OPTIONS=--openssl-legacy-provider`
+
 `npm run server`
+
 `truffle test ./test/oracles.js`
 
 ## Deploy
