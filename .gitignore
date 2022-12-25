@@ -61,6 +61,10 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+.envs
 
 ~$*.pptx
+.idea/
+package-lock.json
+
+.babelrc
