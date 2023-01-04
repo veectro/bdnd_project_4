@@ -4,8 +4,7 @@ pragma solidity ^0.4.25;
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
 // More info: https://www.nccgroup.trust/us/about-us/newsroom-and-events/blog/2018/november/smart-contract-insecurity-bad-arithmetic/
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./FlightSuretyData.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /************************************************** */
 /* FlightSurety Smart Contract                      */
@@ -25,7 +24,10 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
-    address private contractOwner;          // Account used to deploy contract
+    uint256 private constant MIN_CONSENSUS_RESPONSES = 4;
+    bool private voting = false;
+
+    address private contractOwner;
 
     struct Flight {
         bool isRegistered;
@@ -35,6 +37,22 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => Flight) private flights;
 
+    FlightSuretyData flightSuretyData;
+
+    /********************************************************************************************/
+    /*                                       EVENTS                                             */
+    /********************************************************************************************/
+
+    event RegisterAirline(address account);
+    event SubmitOracleResponse(
+        uint8 indexes,
+        address airline,
+        string flight,
+        uint256 timestamp,
+        uint8 statusCode
+    );
+    event BuyInsurance(address airline, address passenger, uint256 amount);
+    event Withdraw(address passenger, uint256 amount);
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -74,10 +92,14 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
+                                    address dataContractAddress
                                 )
                                 public
     {
         contractOwner = msg.sender;
+        flightSuretyData = FlightSuretyData(dataContractAddress);
+        flightSuretyData.registerAirline(contractOwner, true);
+        emit RegisterAirline(contractOwner);
     }
 
     /********************************************************************************************/
@@ -103,17 +125,90 @@ contract FlightSuretyApp {
     */
     function registerAirline
                             (
+                                address airline
                             )
                             external
-                            pure
                             returns(bool success, uint256 votes)
     {
-        return (success, 0);
+        require(airline != address(0), "FlightSuretyApp: Invalid airline address.");
+        require(flightSuretyData.isAirlineOperational(msg.sender),"FlightSuretyApp: Airline is already operational");
+
+        uint256 multiCallsLength = flightSuretyData.multiCallsLength();
+
+        if (multiCallsLength < MIN_CONSENSUS_RESPONSES) {
+            flightSuretyData.registerAirline(airline, false);
+            emit RegisterAirline(airline);
+
+            return (true, 0);
+        } else {
+            if (voting) {
+                uint256 voteCounter = flightSuretyData.getVoteCounter(airline);
+
+                if (voteCounter >= multiCallsLength.div(2)) {
+                    flightSuretyData.registerAirline(airline, false);
+
+                    voting = false;
+                    flightSuretyData.resetVoteCounter(airline);
+
+                    emit RegisterAirline(airline);
+                    return (true, voteCounter);
+                } else {
+                    flightSuretyData.resetVoteCounter(airline);
+                    return (false, voteCounter);
+                }
+            } else {
+                return (false, 0);
+            }
+        }
+    }
+
+    function approveAirlineRegistration
+                                        (
+                                            address airline
+                                        )
+                                        public
+                                        requireIsOperational
+    {
+        flightSuretyData.incrementVoteCounter(airline);
+        voting = true;
+    }
+
+    function buyInsurance
+                        (
+                            address airline
+                        )
+                        external
+                        payable
+                        requireIsOperational
+    {
+        require(flightSuretyData.isAirlineOperational(airline),"Airline is not operational");
+
+        require(
+            (msg.value > 0 ether) && (msg.value <= 1 ether),
+            "Insurance amount need to be between 0 to 1 ETH range"
+        );
+
+        flightSuretyData.buy(airline, msg.sender, msg.value);
+        emit BuyInsurance(airline, msg.sender, msg.value);
+    }
+
+    function withdraw() external requireIsOperational {
+        uint256 withdrawAmount = flightSuretyData.withdraw(msg.sender);
+        msg.sender.transfer(withdrawAmount);
+
+        emit Withdraw(msg.sender, withdrawAmount);
     }
 
 
-   /**
-    * @dev Register a future flight for insuring.
+    function fund() public payable requireIsOperational {
+        require(msg.value == 10 ether, "At least 10 ETH are needed");
+
+        flightSuretyData.fund(msg.sender, msg.value);
+    }
+
+
+    /**
+     * @dev Register a future flight for insuring.
     *
     */
     function registerFlight
@@ -122,7 +217,7 @@ contract FlightSuretyApp {
                                 external
                                 pure
     {
-
+       // TODO
     }
 
    /**
@@ -335,4 +430,30 @@ contract FlightSuretyApp {
 
 // endregion
 
-}   
+}
+
+contract FlightSuretyData {
+    function buy(
+        address account,
+        address passenger,
+        uint256 amount
+    ) external;
+
+    function creditInsurees(address account) external;
+
+    function withdraw(address passenger) external returns (uint256);
+
+    function fund(address account, uint256 amount) external;
+
+    function registerAirline(address airline, bool status) external;
+
+    function isAirlineOperational(address airline) external returns (bool);
+
+    function multiCallsLength() external returns (uint256);
+
+    function getVoteCounter(address account) external view returns (uint256);
+
+    function incrementVoteCounter(address account) external;
+
+    function resetVoteCounter(address account) external;
+}

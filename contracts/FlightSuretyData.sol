@@ -1,6 +1,6 @@
 pragma solidity ^0.4.25;
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract FlightSuretyData {
     using SafeMath for uint256;
@@ -11,6 +11,27 @@ contract FlightSuretyData {
 
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
+    address[] multiCalls = new address[](0);
+    mapping(address => Airline) airlines;
+    mapping(address => bool) authorizedCallers;
+    mapping(address => uint256) private votes;
+    mapping(address => Insurance) insurances;
+    mapping(address => uint256) credits; // track credits of insuree
+
+    /********************************************************************************************/
+    /*                                       STRUCT                                             */
+    /********************************************************************************************/
+
+    struct Airline {
+        bool isRegistered;
+        bool isOperational;
+        uint256 fund;
+    }
+
+    struct Insurance {
+        address passenger;
+        uint256 amount;
+    }
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -22,9 +43,9 @@ contract FlightSuretyData {
     *      The deploying account becomes contractOwner
     */
     constructor
-                                (
-                                ) 
-                                public 
+    (
+    )
+    public
     {
         contractOwner = msg.sender;
     }
@@ -41,10 +62,11 @@ contract FlightSuretyData {
     *      This is used on all state changing functions to pause the contract in 
     *      the event there is an issue that needs to be fixed
     */
-    modifier requireIsOperational() 
+    modifier requireIsOperational()
     {
         require(operational, "Contract is currently not operational");
-        _;  // All modifiers require an "_" which indicates where the function body will be added
+        _;
+        // All modifiers require an "_" which indicates where the function body will be added
     }
 
     /**
@@ -64,11 +86,11 @@ contract FlightSuretyData {
     * @dev Get operating status of contract
     *
     * @return A bool that is the current operating status
-    */      
-    function isOperational() 
-                            public 
-                            view 
-                            returns(bool) 
+    */
+    function isOperational()
+    public
+    view
+    returns (bool)
     {
         return operational;
     }
@@ -78,13 +100,13 @@ contract FlightSuretyData {
     * @dev Sets contract operations on/off
     *
     * When operational mode is disabled, all write transactions except for this one will fail
-    */    
+    */
     function setOperatingStatus
-                            (
-                                bool mode
-                            ) 
-                            external
-                            requireContractOwner 
+    (
+        bool mode
+    )
+    external
+    requireContractOwner
     {
         operational = mode;
     }
@@ -93,92 +115,180 @@ contract FlightSuretyData {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-   /**
-    * @dev Add an airline to the registration queue
+    /**
+     * @dev Add an airline to the registration queue
     *      Can only be called from FlightSuretyApp contract
     *
-    */   
+    */
     function registerAirline
-                            (   
-                            )
-                            external
-                            pure
+    (
+        address account, bool status
+    )
+    external
+    requireIsOperational
     {
+        airlines[account] = Airline(
+        {
+        isRegistered : true,
+        isOperational : status,
+        fund : 0
+        }
+        );
+
+        setMultiCalls(account);
     }
 
+    function isAirlineOperational(address account) public view returns (bool) {
+        return airlines[account].isOperational;
+    }
 
-   /**
-    * @dev Buy insurance for a flight
+    function isAirline(address airline) external view returns (bool) {
+        return airlines[airline].isRegistered;
+    }
+
+    /**
+     * @dev Buy insurance for a flight
     *
-    */   
+    */
     function buy
-                            (                             
-                            )
-                            external
-                            payable
+    (
+        address account,
+        address passenger,
+        uint256 amount
+    )
+    external
+    payable
     {
+        insurances[account] = Insurance({passenger : passenger, amount : amount});
 
+        credits[passenger] = 0;
+
+        uint256 airlineFund = airlines[account].fund;
+        airlines[account].fund = airlineFund.add(amount);
     }
 
     /**
      *  @dev Credits payouts to insurees
     */
     function creditInsurees
-                                (
-                                )
-                                external
-                                pure
+    (
+        address account
+    )
+    external
     {
+        uint256 credit = insurances[account].amount.div(2).mul(3);
+
+        require(airlines[account].fund >= credit, "Airline dont have more money");
+
+        uint256 airlineFund = airlines[account].fund;
+        airlines[account].fund = airlineFund.sub(credit);
+
+        insurances[account].amount = 0;
+
+        uint256 passengerCredits = credits[insurances[account].passenger];
+        credits[insurances[account].passenger] = passengerCredits.add(credit);
     }
-    
+
 
     /**
      *  @dev Transfers eligible payout funds to insuree
      *
     */
     function pay
-                            (
-                            )
-                            external
-                            pure
+                (
+                    address passenger
+                )
+                external
+                requireIsOperational
+                returns (uint256)
     {
+        uint256 amount = credits[passenger];
+        delete credits[passenger];
+
+        return amount;
     }
 
-   /**
-    * @dev Initial funding for the insurance. Unless there are too many delayed flights
+    /**
+     * @dev Initial funding for the insurance. Unless there are too many delayed flights
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
-    */   
+    */
     function fund
-                            (   
-                            )
-                            public
-                            payable
+    (
+        address account,
+        uint256 amount
+    )
+    public
+    payable
     {
+        airlines[account].isOperational = true;
+        airlines[account].fund = amount;
     }
 
     function getFlightKey
-                        (
-                            address airline,
-                            string memory flight,
-                            uint256 timestamp
-                        )
-                        pure
-                        internal
-                        returns(bytes32) 
+    (
+        address airline,
+        string memory flight,
+        uint256 timestamp
+    )
+    internal
+    returns (bytes32)
     {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
+    }
+
+    function authorizeCaller(address caller) external requireContractOwner {
+        authorizedCallers[caller] = true;
+    }
+
+    /********************************************************************************************/
+    /*                                     VOTING SYSTEM                                        */
+    /********************************************************************************************/
+
+    function getVoteCounter(
+        address account
+    )
+    external
+    view
+    requireIsOperational
+    returns (uint256)
+    {
+        return votes[account];
+    }
+
+    function incrementVoteCounter(address account) external requireIsOperational {
+        uint256 vote = votes[account];
+        votes[account] = vote.add(1);
+    }
+
+    function resetVoteCounter(address account)
+    external requireIsOperational
+    {
+        delete votes[account];
+    }
+
+    function multiCallsLength()
+    external
+    view
+    requireIsOperational
+    returns (uint256)
+    {
+        return multiCalls.length;
+    }
+
+    function setMultiCalls(address account) private {
+        multiCalls.push(account);
     }
 
     /**
     * @dev Fallback function for funding smart contract.
     *
     */
-    function() 
-                            external 
-                            payable 
+    function()
+    external
+    payable
     {
-        fund();
+        fund(msg.sender, msg.value);
     }
 
 
