@@ -9,6 +9,7 @@ module.exports = {
       network_id: "*",
       gas: 6721975
     },
+    // https://knowledge.udacity.com/questions/38069
     developmentOld: {
       provider: function() {
         return new HDWalletProvider(mnemonic, "http://127.0.0.1:7545/", 0, 50);
