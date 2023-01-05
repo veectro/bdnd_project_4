@@ -181,11 +181,11 @@ contract FlightSuretyApp {
                         payable
                         requireIsOperational
     {
-        require(flightSuretyData.isAirlineOperational(airline),"Airline is not operational");
+        require(flightSuretyData.isAirlineOperational(airline),"FlightSuretyApp: Airline is not operational");
 
         require(
             (msg.value > 0 ether) && (msg.value <= 1 ether),
-            "Insurance amount need to be between 0 to 1 ETH range"
+            "FlightSuretyApp: Insurance amount need to be between 0 to 1 ETH range"
         );
 
         flightSuretyData.buy(airline, msg.sender, msg.value);
@@ -201,7 +201,7 @@ contract FlightSuretyApp {
 
 
     function fund() public payable requireIsOperational {
-        require(msg.value == 10 ether, "At least 10 ETH are needed");
+        require(msg.value == 10 ether, "FlightSuretyApp:  At least 10 ETH are needed");
 
         flightSuretyData.fund(msg.sender, msg.value);
     }
@@ -311,7 +311,7 @@ contract FlightSuretyApp {
                             payable
     {
         // Require registration fee
-        require(msg.value >= REGISTRATION_FEE, "Registration fee is required");
+        require(msg.value >= REGISTRATION_FEE, "FlightSuretyApp: Registration fee is required");
 
         uint8[3] memory indexes = generateIndexes(msg.sender);
 
@@ -328,7 +328,7 @@ contract FlightSuretyApp {
                             external
                             returns(uint8[3])
     {
-        require(oracles[msg.sender].isRegistered, "Not registered as an oracle");
+        require(oracles[msg.sender].isRegistered, "FlightSuretyApp: Not registered as an oracle");
 
         return oracles[msg.sender].indexes;
     }
@@ -354,7 +354,7 @@ contract FlightSuretyApp {
 
 
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
-        require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
+        require(oracleResponses[key].isOpen, "FlightSuretyApp: Flight or timestamp do not match oracle request");
 
         oracleResponses[key].responses[statusCode].push(msg.sender);
 

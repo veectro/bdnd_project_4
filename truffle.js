@@ -1,5 +1,5 @@
 var HDWalletProvider = require("truffle-hdwallet-provider");
-var mnemonic = "opera stadium account valid panic essence size ensure column slow play phrase";
+var mnemonic = "lake delay truth theory rail buyer copper strategy first stadium ship rich";
 
 module.exports = {
   networks: {
