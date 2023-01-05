@@ -39,9 +39,9 @@ To run truffle tests:
 
 To use the dapp:
 
-`export NODE_OPTIONS=--openssl-legacy-provider`
-`truffle migrate`
-`npm run dapp`
+`export NODE_OPTIONS=--openssl-legacy-provider`  
+`truffle migrate`  
+`npm run dapp`  
 
 To view dapp:
 

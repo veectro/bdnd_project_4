@@ -10,8 +10,8 @@ web3.eth.defaultAccount = web3.eth.accounts[0];
 let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
 
 // Constants
-const FEE = web3.utils.toWei("1", "ether")
-const ORACLES_COUNT = 20
+let gas = "2000000"
+let ORACLES_COUNT = 20
 
 let accounts; // accounts holder
 let requestCounter = 0;
@@ -20,9 +20,15 @@ let requestCounter = 0;
 let flightStatusCode = [10, 20, 30, 20, 40, 20, 20, 10]
 
 const init = async () => {
+    let FEE = await flightSuretyApp.methods.REGISTRATION_FEE().call();
+    console.log(`Starting oracle with FEE is ${FEE}`);
+
     accounts = await web3.eth.getAccounts();
     for (let i = 0; i < ORACLES_COUNT; i++) {
         try {
+            console.log(`Registering oracle ${i} with account ${accounts[i]}`);
+            await flightSuretyApp.methods.registerOracle().send({from: accounts[i], value: FEE, gas: gas});
+
             let result = await flightSuretyApp.methods.getMyIndexes().call({from: accounts[i]});
             console.log(`Oracle Registered: ${result[0]}, ${result[1]}, ${result[2]}`);
         } catch (error) {
@@ -37,7 +43,7 @@ const submitOracleResponse = async (oracle, index, airline, flight, timestamp, s
     try {
         await flightSuretyApp.methods.submitOracleResponse(index, airline, flight, timestamp, statusCode).send({
             from: accounts[oracle],
-            gas: "6000000"
+            gas: gas
         })
     } catch (error) {
         console.log(`Error while sending oracle -${oracle}- answer : `, error.message)
