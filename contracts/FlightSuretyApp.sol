@@ -43,16 +43,16 @@ contract FlightSuretyApp {
     /*                                       EVENTS                                             */
     /********************************************************************************************/
 
-    event RegisterAirline(address account);
-    event SubmitOracleResponse(
+    event AirlineRegistered(address account);
+    event OracleResponseSubmitted(
         uint8 indexes,
         address airline,
         string flight,
         uint256 timestamp,
         uint8 statusCode
     );
-    event BuyInsurance(address airline, address passenger, uint256 amount);
-    event Withdraw(address passenger, uint256 amount);
+    event InsuranceBought(address airline, address passenger, uint256 amount);
+    event InsuranceWithdrawed(address passenger, uint256 amount);
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -99,7 +99,7 @@ contract FlightSuretyApp {
         contractOwner = msg.sender;
         flightSuretyData = FlightSuretyData(dataContractAddress);
         flightSuretyData.registerAirline(contractOwner, true);
-        emit RegisterAirline(contractOwner);
+        emit AirlineRegistered(contractOwner);
     }
 
     /********************************************************************************************/
@@ -137,7 +137,7 @@ contract FlightSuretyApp {
 
         if (multiCallsLength < MIN_CONSENSUS_RESPONSES) {
             flightSuretyData.registerAirline(airline, false);
-            emit RegisterAirline(airline);
+            emit AirlineRegistered(airline);
 
             return (true, 0);
         } else {
@@ -150,7 +150,7 @@ contract FlightSuretyApp {
                     voting = false;
                     flightSuretyData.resetVoteCounter(airline);
 
-                    emit RegisterAirline(airline);
+                    emit AirlineRegistered(airline);
                     return (true, voteCounter);
                 } else {
                     flightSuretyData.resetVoteCounter(airline);
@@ -189,14 +189,14 @@ contract FlightSuretyApp {
         );
 
         flightSuretyData.buy(airline, msg.sender, msg.value);
-        emit BuyInsurance(airline, msg.sender, msg.value);
+        emit InsuranceBought(airline, msg.sender, msg.value);
     }
 
     function withdraw() external requireIsOperational {
         uint256 withdrawAmount = flightSuretyData.pay(msg.sender);
         msg.sender.transfer(withdrawAmount);
 
-        emit Withdraw(msg.sender, withdrawAmount);
+        emit InsuranceWithdrawed(msg.sender, withdrawAmount);
     }
 
 
