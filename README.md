@@ -30,7 +30,12 @@ To install, download or clone the repo, then:
 To run truffle tests:
 
 `truffle test ./test/flightSurety.js`
+
+![flight_surety_test_result.png](images%2Fflight_surety_test_result.png)
+
 `truffle test ./test/oracles.js`
+
+![oracle_test_result.png](images%2Foracle_test_result.png)
 
 To use the dapp:
 
@@ -43,11 +48,11 @@ To view dapp:
 
 ## Develop Server
 
-`export NODE_OPTIONS=--openssl-legacy-provider`
-
-`npm run server`
-
-`truffle test ./test/oracles.js`
+```
+export NODE_OPTIONS=--openssl-legacy-provider
+npm run server
+truffle test ./test/oracles.js
+```
 
 ## Deploy
 
@@ -56,6 +61,9 @@ To build dapp for prod:
 
 Deploy the contents of the ./dapp folder
 
+## FAQ
+
+[Flight Surety Project FAQ — Udacity Blockchain](https://andresaaap.medium.com/flightsurety-project-faq-udacity-blockchain-b4bd4fb03320)
 
 ## Resources
 
