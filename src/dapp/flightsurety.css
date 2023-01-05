@@ -4,14 +4,6 @@ body {
     background-size: cover;
 }
 
-.container {
-    margin-top: 400px;
-    background-color: #000;
-    opacity: 0.9;
-    color: #fff;
-    padding: 40px;
-}
-
 .top-20 {
     margin-top: 20px;
 }
