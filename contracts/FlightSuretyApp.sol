@@ -193,7 +193,7 @@ contract FlightSuretyApp {
     }
 
     function withdraw() external requireIsOperational {
-        uint256 withdrawAmount = flightSuretyData.withdraw(msg.sender);
+        uint256 withdrawAmount = flightSuretyData.pay(msg.sender);
         msg.sender.transfer(withdrawAmount);
 
         emit Withdraw(msg.sender, withdrawAmount);
@@ -441,7 +441,7 @@ contract FlightSuretyData {
 
     function creditInsurees(address account) external;
 
-    function withdraw(address passenger) external returns (uint256);
+    function pay(address passenger) external returns (uint256);
 
     function fund(address account, uint256 amount) external;
 
