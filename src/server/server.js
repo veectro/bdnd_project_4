@@ -16,6 +16,8 @@ let ORACLES_COUNT = 20
 let accounts; // accounts holder
 let requestCounter = 0;
 
+let oracles = {};
+
 // mocked fixed status flight response
 let flightStatusCode = [10, 20, 30, 20, 40, 20, 20, 10]
 
@@ -30,7 +32,9 @@ const init = async () => {
             await flightSuretyApp.methods.registerOracle().send({from: accounts[i], value: FEE, gas: gas});
 
             let result = await flightSuretyApp.methods.getMyIndexes().call({from: accounts[i]});
-            console.log(`Oracle Registered: ${result[0]}, ${result[1]}, ${result[2]}`);
+            oracles[accounts[i]] = result;
+            console.log(`Oracle Registered for ${accounts[i]} : ${result}`);
+
         } catch (error) {
             console.log(`Error: ${error.message}`);
         }
@@ -39,14 +43,16 @@ const init = async () => {
 
 init()
 
-const submitOracleResponse = async (oracle, index, airline, flight, timestamp, statusCode) => {
+const submitOracleResponse = async (account_id, index, airline, flight, timestamp, statusCode) => {
     try {
+
+        console.log(`Submitting event with ${account_id} - ${index} - ${airline} - ${flight} - ${statusCode}`);
         await flightSuretyApp.methods.submitOracleResponse(index, airline, flight, timestamp, statusCode).send({
-            from: accounts[oracle],
+            from: account_id,
             gas: gas
         })
     } catch (error) {
-        console.log(`Error while sending oracle -${oracle}- answer : `, error.message)
+        console.log(`Error while sending oracle ${account_id} answer : `, error.message)
     }
 }
 
@@ -54,9 +60,13 @@ const submitOracleResponse = async (oracle, index, airline, flight, timestamp, s
 flightSuretyApp.events.OracleRequest({fromBlock: 0}, function (error, event) {
         if (error) console.log(error.message)
         let {index, airline, flight, timestamp} = event.returnValues
+        console.log(`Receiving event with ${index} ${airline} - ${flight}`);
 
-        for (let i = 0; i < ORACLES_COUNT; i++) {
-            submitOracleResponse(i, index, airline, flight, timestamp, flightStatusCode[requestCounter]);
+        for (var acc_idx in oracles) {
+            var indexes = oracles[acc_idx];
+            if (indexes.includes(index)) {
+                submitOracleResponse(acc_idx, index, airline, flight, timestamp, flightStatusCode[requestCounter]);
+            }
         }
         requestCounter++;
     }
