@@ -39,11 +39,11 @@ export default class Contract {
         let self = this;
 
         console.log(`Funding airline with address ${airlineAddress} with amount ${fundAmount}`);
-        //self.flightSuretyApp.methods
-        //    .fund()
-        //    .send({from: airlineAddress, value: fundAmount}, (error, result) => {
-        //        console.log(error, result);
-        //    });
+        self.flightSuretyApp.methods
+            .fund()
+            .send({from: airlineAddress, value: fundAmount}, (error, result) => {
+                console.log(error, result);
+            });
         console.log(`Successful : Funding airline with address ${airlineAddress} with amount ${fundAmount}`);
     }
 
