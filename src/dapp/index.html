@@ -1,20 +1,26 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Flight Surety</title>
+    <meta charset="utf-8"/>
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>FlightSurety</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
             crossorigin="anonymous"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+            integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3"
+            crossorigin="anonymous"></script>
 </head>
-<body>
 
+<body>
 <main>
     <div class="container py-4">
+
         <header class="pb-3 mb-4 border-bottom">
             <a href="/" class="d-flex align-items-center text-dark text-decoration-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="32" class="me-2" viewBox="0 0 118 94"
@@ -30,12 +36,17 @@
         <div class="p-5 mb-4 bg-light rounded-3">
             <div class="container-fluid py-5">
                 <h2>Dashboard</h2>
-                <div id="display-wrapper">
+                <div class="row">
+                    <button class="btn btn-primary" id="submit-oracle">Submit flight to Oracles
+                    </button>
+                </div>
 
+                <span class="navbar-text"> Connected Passenger Wallet Address: <span
+                        id="connected-address">0x0000</span>
+                <div id="display-wrapper">
                 </div>
             </div>
         </div>
-
 
         <div class="p-5 mb-4 bg-light rounded-3">
             <div class="container-fluid py-5">
@@ -43,32 +54,45 @@
 
                 <form id="flight-registration">
                     <div class="mb-3">
-                        <label class="form-label">Flight Name</label>
-                        <input type="text" class="form-control" id="flight-number">
+                        <label class="form-label">Flight Number</label>
+                        <input type="text" class="form-control" id="flight-number" readonly>
                     </div>
-                    <button type="submit" class="btn btn-primary" id="submit-oracle">Submit</button>
                 </form>
+
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        Select Flight
+                    </button>
+                    <ul id="flights" class="dropdown-menu" aria-labelledby="dropdownMenuButton"></ul>
+                </div>
             </div>
         </div>
+
 
         <div class="p-5 mb-4 bg-light rounded-3">
             <div class="container-fluid py-5">
                 <h2>Passengers</h2>
-                <p class="col-md-8 fs-4">Using a series of utilities, you can create this jumbotron, just like the
-                    one
-                    in previous versions of Bootstrap. Check out the examples below for how you can remix and
-                    restyle it
-                    to your liking.</p>
-                <button class="btn btn-primary btn-lg" type="button">Example button</button>
+
+                <form id="passenger-registration">
+                    <div class="mb-3">
+                        <label class="form-label">Insurance Amount (between 0.01-1 ETH)</label>
+                        <input type="text" class="form-control" id="insurance-amount" min="0" max="1" step="0.01">
+                    </div>
+
+                    <button id="buy-flight-insurance" type="button" class="btn btn-primary">
+                        Buy Insurance
+                    </button>
+
+
+                    <button id="withdraw-credits" type="button" class="btn btn-danger">
+                        Withdraw Credit
+                    </button>
+                </form>
             </div>
         </div>
-
-        <footer class="pt-3 mt-4 text-muted border-top">
-            © 2021
-        </footer>
     </div>
+
 </main>
-
-
 </body>
 </html>
